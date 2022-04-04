@@ -12,7 +12,7 @@ try:
 except:
     import sys
 
-    sys.path.append("../")
+    sys.path.append("../../")
     # from eof import fingerprints
     import clif
 
@@ -44,6 +44,11 @@ deck_combined = xr.concat([val for key, val in deck_runs.items()], "x")
 ds = deck_combined.mean(dim="x")
 lat_lon_weights = ds.area
 data = ds["T"]
+
+data_before = data.sel(time=slice('1985-01-01','1991-06-20'))
+mu0 = data_before.groupby('time.month').mean('time')
+data_after = data.sel(time=slice('1991-06-20','1997-12-31'))
+raise SystemExit(0)
 
 ##################################################################
 ## Preprocess data using new API
