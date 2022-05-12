@@ -108,6 +108,7 @@ pipe = Pipeline(
 # Transform average DECK data to obtain EOF
 data_H_avg_trfm = pipe.fit_transform(data)
 
+# Transform the DECK ensemble
 data_H_trfm_all = []
 for key, val in deck_runs.items():
     print(key)
@@ -288,5 +289,5 @@ beta_L_mu = beta_L_pi.mean(axis=1)
 fig, ax = plt.subplots(1, 1, figsize=[8, 5])
 ax.plot(range(1986, 1996), (beta_L - beta_L_mu)[1:-1] / np.sqrt(N_L[1:-1]))
 ax.set_xlabel("year")
-ax.set_ylabel(r"$\frac{(\beta(y)-\mu)}{N(y)}$",rotation=0,labelpad=20)
+ax.set_ylabel(r"$\frac{(\beta(y)-\mu)}{N(y)}$", rotation=0, labelpad=20)
 ax.grid(True)
