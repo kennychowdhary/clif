@@ -1,4 +1,3 @@
-from calendar import month
 import numpy as np
 import matplotlib.pyplot as plt
 from sklearn import datasets
@@ -108,7 +107,7 @@ pipe = Pipeline(
         # ("clip", clipT),
         ("anom", monthlydetrend),
         ("marginalize", intoutT),
-        # ("detrend", lindetrendT),
+        ("detrend", lindetrendT),
         ("transpose", transformT),
     ]
 )
@@ -139,7 +138,7 @@ for pi_data_i in pi_data_split:
 ######################################################################
 # Now we can begin calculating the EOFs
 # obtain fingerprints
-n_components = 4
+n_components = 1
 fp = clif.fingerprints(n_eofs=n_components, varimax=False)
 
 # Fit EOF to deck avg data
@@ -149,13 +148,19 @@ fp.fit(data_H_avg_trfm)
 # extract pca fingerprints and convergence diagnostics
 eofs_pca = fp.eofs_
 
+# test transform
+X_test = data_H_avg_trfm.values
+Xhat = fp.transform(X_test)
+
 # plot eofs:
-fig, ax = plt.subplots(1, figsize=[10, 4])
-ax.plot(data["plev"].values, eofs_pca[0])
-ax.grid(True)
+fig, ax = plt.subplots(1, figsize=[12, 6])
+ax.plot(data["plev"].values / 100.0, eofs_pca[0], linewidth=3)  # plev in pascals
+ax.axvspan(10, 100, alpha=0.15, color="C5", label="lower stratosphere")
+ax.grid(True, which="both", linestyle="--", alpha=0.6)
 ax.set_xscale("log")
-ax.set_xlabel("hPa")
-ax.set_ylabel("Scaled \n principal \ncomponent", rotation=0, labelpad=26)
+ax.set_xlabel("hPa", fontsize=14)
+ax.set_ylabel("Scaled \n principal \ncomponent", rotation=0, labelpad=35, fontsize=14)
+ax.legend(fancybox=True, fontsize=14)
 ax.invert_xaxis()
 
 print("Transforming data...")
@@ -194,25 +199,29 @@ pinatubo_event = datetime.datetime(1991, 6, 15)
 
 # plot eof's with trend lines before and after event
 # import nc_time_axis # to allow plotting of cftime datetime using matplotlib
-fig, axes = plt.subplots(2, int(n_components / 2), figsize=(11, 5))
+if n_components == 1:
+    fig, axes = plt.subplots(1, figsize=(11, 5))
+    axes = np.array(axes)
+else:
+    fig, axes = plt.subplots(2, int(n_components / 2), figsize=(11, 5))
 fig.suptitle("EOF scores/ loadings", fontsize=20)
 for i, ax in enumerate(axes.flatten()):
     eof_ts = eof_time_series_H_avg[:, i]
-    eof_ts_H_deck_temp = np.array(
+    eof_ts_H_deck = np.array(
         [eof_time_series_H_data[ii][:, i] for ii in range(len(data_H_trfm_all))]
     ).T
-    eof_ts_PI_temp = np.array(
+    eof_ts_PI = np.array(
         [
             eof_time_series_pi_data[ii][:, i]
             for ii in range(len(eof_time_series_pi_data))
         ]
     ).T
-    eof_ts_H_quantiles = np.quantile(eof_ts_H_deck_temp, [0.025, 0.975], axis=1)
-    eof_ts_PI_quantiles = np.quantile(eof_ts_PI_temp, [0.025, 0.975], axis=1)
+    eof_ts_H_quantiles = np.quantile(eof_ts_H_deck, [0.025, 0.975], axis=1)
+    eof_ts_PI_quantiles = np.quantile(eof_ts_PI, [0.025, 0.975], axis=1)
     ax.plot(
         times,
         eof_ts,
-        label="PC score {0}".format(i + 1),
+        label="E3SMv1",
         color=f"C{i}",
         linewidth=2,
         alpha=0.8,
@@ -228,10 +237,10 @@ for i, ax in enumerate(axes.flatten()):
         times,
         eof_time_series_pi_avg[:, i],
         color=f"C{i+1}",
-        alpha=0.7,
+        alpha=0.5,
         linestyle="-",
-        linewidth=1,
-        label="pre-industrial score",
+        linewidth=2,
+        label="80 yr pre-industrial",
     )
     ax.fill_between(
         x=times,
@@ -243,13 +252,14 @@ for i, ax in enumerate(axes.flatten()):
     ax.plot(
         times,
         eof_time_series_era5[:, i],
-        color=f"C{i}",
-        alpha=0.7,
+        color=f"C{i+3}",
+        alpha=0.4,
         linestyle="-",
-        linewidth=1,
-        label="ERA5 score",
+        linewidth=2,
+        label="ERA5",
     )
     ax.axvline(pinatubo_event, color="k", linestyle="--", alpha=0.5)
+    ax.set_ylabel("Temperature \nanomalies", rotation=0, labelpad=30)
     ax.legend(fancybox=True)
     ax.grid(True)
 
@@ -304,21 +314,47 @@ for j in range(pi_samples):
 N_L = beta_L_pi.var(axis=1)
 beta_L_mu = beta_L_pi.mean(axis=1)
 
-fig, ax = plt.subplots(1, 1, figsize=[8, 5])
-ax.plot(range(1985, 1997), (beta_L - beta_L_mu)[:] / np.sqrt(N_L[:]), "o", markersize=5)
+years = np.arange(1985, 1997)
+year_index = [y > 1985 and y < 1996 for y in years]
+fig, ax = plt.subplots(1, 1, figsize=[14, 6])
+ax.plot(
+    years[year_index],
+    (beta_L - beta_L_mu)[year_index] / np.sqrt(N_L[year_index]),
+    "o",
+    markersize=8,
+    label="Trend coef.",
+)
 for i in range(pi_samples):
     ax.plot(
-        range(1985, 1997),
-        (beta_L_pi[:, i] - beta_L_mu)[:] / np.sqrt(N_L[:]),
+        years[year_index],
+        (beta_L_pi[:, i] - beta_L_mu[:])[year_index] / np.sqrt(N_L[year_index]),
+        ".",
         color="C3",
         alpha=0.1,
+        ms=6,
     )
 
-ax.fill_between(x=range(1984, 1998), y1=-2, y2=2, color="red", alpha=0.2)
-ax.set_xlabel("year")
-ax.set_ylabel(r"$\frac{(\beta(y)-\mu)}{N(y)}$", rotation=0, labelpad=20)
-ax.grid(True)
-ax.set_xlim([1984, 1997])
+ax.fill_between(
+    x=range(1984, 1998),
+    y1=-2,
+    y2=2,
+    color="red",
+    alpha=0.2,
+    label="Pre-industrial" + r"$\pm 2\sigma$",
+)
+ax.set_xlabel(
+    "year",
+    fontsize=14,
+)
+ax.set_ylabel(
+    "Signal\nto\nnoise",
+    rotation=0,
+    labelpad=40,
+    fontsize=14,
+)
+ax.grid(True, which="both", linestyle="--", alpha=0.6)
+ax.legend(fancybox=True, fontsize=12)
+plt.show()
 
 # Things to do:
 # 1 Figure showing EOF1 and projections of PI runs

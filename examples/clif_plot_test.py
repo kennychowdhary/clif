@@ -5,6 +5,7 @@ from dataclasses import dataclass, field
 import matplotlib.pyplot as plt
 import numpy as np
 from sklearn.pipeline import Pipeline
+import datetime
 
 try:
     import clif
@@ -50,10 +51,10 @@ T_plev_time = MarginalizeOutTransform(dims=["lat", "lon"]).fit_transform(T).T
 # )
 # plotfield3.show(T_lat_time)
 
-plotfield4 = clif.visualization.plot_plev_time(
+plotfield4 = clif.visualization.contour.plot_plev_time(
     cmap_name="e3sm_default",
     title="T",
-    rhs_title=u"\u00b0" + "K",
+    rhs_title="\u00b0" + "K",
 )
 # plotfield4.show(T_plev_time)
 
@@ -70,19 +71,32 @@ pipe = Pipeline(
     ]
 )
 
+import xarray
+
+
+class plot_plev_time_w_pinatubo(clif.visualization.contour.plot_plev_time):
+    def draw(
+        self, data: xarray.DataArray, x_name="time", y_name="plev", fig=None, ax=None
+    ):
+        super().draw(data, x_name=x_name, y_name=y_name)
+        pinatubo_event = datetime.datetime(1991, 6, 15)
+        self.ax_.axvline(pinatubo_event, color="k", linestyle="--", alpha=0.5)
+
+
 T_new = pipe.fit_transform(T)
-plotfield5 = clif.visualization.plot_plev_time(
+plotfield5 = plot_plev_time_w_pinatubo(
     cmap_name="e3sm_default_diff",
     title="T",
-    rhs_title=u"\u00b0" + "K",
+    rhs_title="\u00b0" + "K",
     log_plevs=True,
     nlevels=30,
 )
-# plotfield5.show(T_new)
+# plotfield5.ax_.axvline(pinatubo_event, color="k", linestyle="--", alpha=0.5)
+plotfield5.show(T_new)
 
 
-# compute frequency/ period plots using fft
-Ts = T_new.isel(plev=0)
-time_index = Ts.indexes["time"]
-time_diff_days = time_index[1:] - time_index[:-1]
-avg_dt = np.mean([dti.days for dti in time_diff_days])
+# # compute frequency/ period plots using fft
+# Ts = T_new.isel(plev=0)
+# time_index = Ts.indexes["time"]
+# time_diff_days = time_index[1:] - time_index[:-1]
+# avg_dt = np.mean([dti.days for dti in time_diff_days])
