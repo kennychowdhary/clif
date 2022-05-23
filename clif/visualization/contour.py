@@ -154,7 +154,7 @@ class BaseContourPlot(BasePlot):
         self.plotSideTitle = sidetitle_fontdict
 
     def get_coords_from_data_array(self, data, dim):
-
+        data = data.copy()
         if dim == "time":
             # return a datetime array instead of cftime
             x = data.indexes[dim].to_datetimeindex(unsafe=True)
@@ -211,7 +211,10 @@ class BaseContourPlot(BasePlot):
         self.stats_dict_ = self.compute_stats(data_)
 
         # Contour levels
-        self.levels_ = self.compute_contour_levels(var)
+        if "levels" in draw_params.keys():
+            self.levels_ = draw_params["levels"]
+        else:
+            self.levels_ = self.compute_contour_levels(var)
 
         if fig is None and ax is None:
             """Create figure if none is given"""
@@ -424,10 +427,16 @@ class plot_lat_lon(BaseContourPlot):
         self.region = region
 
     def draw(
-        self, data: xarray.DataArray, x_name="lon", y_name="lat", fig=None, ax=None
+        self,
+        data: xarray.DataArray,
+        x_name="lon",
+        y_name="lat",
+        fig=None,
+        ax=None,
+        **draw_params,
     ):
-        super().draw(data, x_name=x_name, y_name=y_name)
-        self.ax_.coastlines(lw=0.35)
+        super().draw(data, x_name=x_name, y_name=y_name, **draw_params)
+        self.ax_.coastlines(lw=0.5)
 
     def set_yaxis_properties(self):
         self.set_axis_to_latitude()
