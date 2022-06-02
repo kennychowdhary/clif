@@ -20,11 +20,14 @@ QOI = "T"
 ERA5_QOI = "ta"
 PI_QOI = "T"
 # define source of H* directories
-SOURCE_DIR = os.path.join(os.getenv("HOME"), "Research", "e3sm_data/fingerprint/")
-ERA5_SOURCE_DIR = os.path.join(
-    os.getenv("HOME"), "Research", "e3sm_data/fingerprint/ERA5"
+SOURCE_DIR = os.path.join(
+    os.getenv("HOME"), "Research", "cldera_data/fingerprinting/late-start/"
 )
-PI_SOURCE_DIR = os.path.join(os.getenv("HOME"), "Research", "e3sm_data/fingerprint/PI")
+ERA5_SOURCE_DIR = os.path.join(SOURCE_DIR, "ERA5")
+PI_SOURCE_DIR = os.path.join(SOURCE_DIR, "PI")
+
+# whether to use non-overlapping or overlapping (1 year staggered) pre-industrial runs
+overlapping_pi = False
 
 ##################################################################
 ## Gather all H1 through H5 deck data
@@ -65,20 +68,22 @@ era5_data = xr.open_dataset(ERA5_FILE, chunks={"time": 1})[ERA5_QOI]
 PI_FILE = os.path.join(PI_SOURCE_DIR, "T_020001_027912.nc")
 pi_data = xr.open_dataset(PI_FILE, chunks={"time": 1})[PI_QOI]
 
-# # split up pre-industrial data into groups of 12 years
-# nyears = 12
-# pi_data_split = []
-# for i in range(int(pi_data.shape[0] / 12 / 12)):
-#     pi_data_temp = pi_data[-12 * nyears * (i + 1) :][: 12 * nyears]
-#     pi_data_split.append(pi_data_temp)
+if overlapping_pi:
+    # split up pre-industrial data into groups of 12 years, staggered by 1 year, for a total of ~70 samples
+    nyears = 12
+    pi_data_split = []
+    n_months = int((pi_data.shape[0] - nyears * 12) / 12.0) + 1
+    for i in range(n_months):
+        pi_data_temp = pi_data[12 * i : 12 * i + 144]
+        pi_data_split.append(pi_data_temp)
+else:
+    # split up pre-industrial data into groups of 12 years
+    nyears = 12
+    pi_data_split = []
+    for i in range(int(pi_data.shape[0] / 12 / 12)):
+        pi_data_temp = pi_data[-12 * nyears * (i + 1) :][: 12 * nyears]
+        pi_data_split.append(pi_data_temp)
 
-# split up pre-industrial data into groups of 12 years
-nyears = 12
-pi_data_split = []
-n_months = int((pi_data.shape[0] - nyears * 12) / 12.0) + 1
-for i in range(n_months):
-    pi_data_temp = pi_data[12 * i : 12 * i + 144]
-    pi_data_split.append(pi_data_temp)
 
 # data = data_before.copy()
 data = data_all.copy()
