@@ -410,7 +410,9 @@ class BaseContourPlot(BasePlot):
         if save:
             assert file_name is not None, "Must provide a valid file name"
             self.fig_.savefig(file_name)
-        plt.show()
+        else:
+            # do not show if save option is set to True
+            plt.show()
         return self
 
 
