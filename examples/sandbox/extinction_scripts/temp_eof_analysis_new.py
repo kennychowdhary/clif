@@ -23,8 +23,8 @@ SOURCE_DIR = os.path.join(
 )
 forcing = "1.0x"
 temperature_file = "T_199101_199512.nc"
-save_transformations = True
-load_transformations = False
+save_transformations = False
+load_transformations = True
 
 ########################
 # load data
@@ -104,7 +104,7 @@ if save_transformations:
         Ti.to_netcdf(f"T{ii}_new_{forcing}.nc")
     print(f"Total time to save transforms is {time()-start:.3f} seconds")
 
-######################################################################
+#####################################################################
 ## Begin fingerprinting and plotting EOF time-series scores
 ######################################################################
 if load_transformations:
@@ -169,15 +169,21 @@ ax2.plot(
 # load other data
 T_avg_new_1p5 = xr.open_dataarray(f"T_avg_new_1.5x.nc")
 T_avg_new_0p5 = xr.open_dataarray(f"T_avg_new_0.5x.nc")
+T_avg_new_0p0 = xr.open_dataarray(f"T_avg_new_0.0x.nc")
+
 T_avg_proj_1p0 = fp.transform(T_avg_new.values)
 T_avg_proj_1p5 = fp.transform(T_avg_new_1p5.values)
 T_avg_proj_0p5 = fp.transform(T_avg_new_0p5.values)
+T_avg_proj_0p0 = fp.transform(T_avg_new_0p0.values)
 
 # plot projections
 plot_comp = 0
 fig3, ax3 = plt.subplots(1, figsize=(11, 5))
-ax3.plot(times, T_avg_proj_1p0[:, plot_comp], label="1.0x")
-ax3.plot(times, T_avg_proj_1p5[:, plot_comp], label="1.5x")
-ax3.plot(times, T_avg_proj_0p5[:, plot_comp], label="0.5x")
+ax3.plot(times, T_avg_proj_1p0[:, plot_comp], label="1.0x forcing")
+ax3.plot(times, T_avg_proj_1p5[:, plot_comp], label="1.5x forcing")
+ax3.plot(times, T_avg_proj_0p5[:, plot_comp], label="0.5x forcing")
+ax3.plot(times, T_avg_proj_0p0[:, plot_comp], label="0.0x forcing")
 ax3.legend(fancybox=True)
+ax3.grid(True,which='both')
+ax3.set_ylabel("EOF \nscores",rotation=0, labelpad=15)
 fig3.savefig("proj_comparison.png")
