@@ -7,7 +7,11 @@ __pycache__/
 .pytest_cache/
 /build/
 /*egg-info
+
 *.png
+*.npy
+*.dat
+*.nc
 
 # Setuptools distribution folder.
 /dist/
