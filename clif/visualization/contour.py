@@ -124,6 +124,7 @@ class BaseContourPlot(BasePlot):
     def __init__(
         self,
         cmap_name="e3sm_default",
+        norm=None,
         proj=None,
         figsize=[8.5, 4.0],
         region=None,
@@ -139,6 +140,7 @@ class BaseContourPlot(BasePlot):
         sidetitle_fontdict={"fontsize": 7.5},
     ):
         self.cmap_name = cmap_name
+        self.norm = norm
         self.proj = proj
         self.figsize = figsize
         self.region = region
@@ -229,7 +231,7 @@ class BaseContourPlot(BasePlot):
             y,
             var,
             transform=self.proj,
-            norm=None,
+            norm=self.norm,
             levels=self.levels_,
             cmap=self.cmap_,
             extend="both",
